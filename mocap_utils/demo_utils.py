@@ -8,6 +8,7 @@ import mocap_utils.general_utils as gnu
 import numpy as np
 import json
 import subprocess as sp
+from natsort import natsorted
 
 
 def setup_render_out(out_dir):
@@ -80,8 +81,8 @@ def __img_seq_setup(args):
     render_out_dir = osp.join(args.out_dir, 'rendered')
     gnu.build_dir(render_out_dir)
 
-    mocap_out_dir = osp.join(args.out_dir, "mocap")
-    gnu.build_dir(mocap_out_dir)
+    # mocap_out_dir = osp.join(args.out_dir, "mocap")
+    # gnu.build_dir(mocap_out_dir)
 
 
 def setup_input(args):
@@ -111,7 +112,7 @@ def setup_input(args):
         return input_type, cap
 
     elif input_type =='image_dir':
-        image_list = gnu.get_all_files(args.input_path, image_exts, "relative") 
+        image_list = natsorted(gnu.get_all_files(args.input_path, image_exts, "relative"))
         image_list = [ osp.join(args.input_path, image_name) for image_name in image_list ]
         __img_seq_setup(args)
         return input_type, image_list
