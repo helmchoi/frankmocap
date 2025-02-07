@@ -8,6 +8,13 @@ FrankMocap pursues an easy-to-use single view 3D motion capture system developed
   - [2021/08/18] Our paper has been accepted to ICCV Workshop 2021.
   - [2020/10/09] We have improved openGL rendering speed. It's about 40% faster. (e.g., body module: 6fps -> 11fps)
 
+## Custom hand dataset (HL) running
+```
+python -m demo.handmocap_HL --input_path ./data/<INPUT_FOLDER>
+```
+Data location: images (./data/<EXP_NAME>/*.png)
+
+
 ## Key Features
 - Body Motion Capture:
 <p>
