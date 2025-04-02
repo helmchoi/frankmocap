@@ -25,14 +25,14 @@ import time
 
 def run_hand_mocap(args, bbox_detector, hand_mocap, visualizer):
     output_dir = args.input_path + "/result"
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
     args.out_dir = output_dir
     print("out_dir = ", args.out_dir)
 
     #Set up input data (images or webcam)
     input_type, input_data = demo_utils.setup_input(args)
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
  
     # assert args.out_dir is not None, "Please specify output dir to store the results"
     cur_frame = args.start_frame
@@ -61,7 +61,9 @@ def run_hand_mocap(args, bbox_detector, hand_mocap, visualizer):
 
         # bbox detection
         if load_bbox:
-            hand_bbox_list = [ dict(right_hand = np.array([390.0, 50.0, 500.0, 620.0])) ]      # width_start, height_start, width, height
+            # hand_bbox_list = [ dict(right_hand = np.array([390.0, 50.0, 500.0, 620.0])) ]      # width_start, height_start, width, height
+            # hand_bbox_list = [ dict(right_hand = np.array([460.0, 180.0, 530.0, 520.0])) ]      # width_start, height_start, width, height
+            hand_bbox_list = [ dict(right_hand = np.array([300.0, 80.0, 660.0, 640.0])) ]
         else:            
             # Input images has other body part or hand not cropped.
             # Use hand detection model & body detector for hand detection
@@ -74,6 +76,10 @@ def run_hand_mocap(args, bbox_detector, hand_mocap, visualizer):
             continue
     
         # Hand Pose Regression
+        if cur_frame == 1:  # warmup
+            for _ in range(5):
+                _ = hand_mocap.regress(
+                    img_original_bgr, hand_bbox_list, add_margin=True)
         t0 = time.time()
         pred_output_list = hand_mocap.regress(
                 img_original_bgr, hand_bbox_list, add_margin=True)
@@ -86,16 +92,23 @@ def run_hand_mocap(args, bbox_detector, hand_mocap, visualizer):
         # extract mesh for rendering (vertices in image space and faces) from pred_output_list
         pred_mesh_list = demo_utils.extract_mesh_from_output(pred_output_list)
 
-        # # visualize mesh -----------------------------------------
-        # res_img = visualizer.visualize(
-        #     img_original_bgr, 
-        #     pred_mesh_list = pred_mesh_list, 
-        #     hand_bbox_list = hand_bbox_list)
+        # visualize mesh -----------------------------------------
+        res_img = visualizer.visualize(
+            img_original_bgr, 
+            pred_mesh_list = pred_mesh_list, 
+            hand_bbox_list = hand_bbox_list)
 
-        # # save the image (we can make an option here)
-        # # if args.out_dir is not None:
-        # demo_utils.save_res_img(args.out_dir, image_path, res_img)
-        # # --------------------------------------------------------
+        # save the image (we can make an option here)
+        # if args.out_dir is not None:
+        demo_utils.save_res_img(args.out_dir, image_path, res_img)
+
+        # SIDE VIEW
+        res_img = visualizer.visualize(
+            img_original_bgr, 
+            pred_mesh_list = pred_mesh_list, 
+            hand_bbox_list = hand_bbox_list, side_view=True)
+        demo_utils.save_res_img(args.out_dir, image_path[:-4]+"_side.png", res_img)
+        # --------------------------------------------------------
 
         # save predictions
         assert len(pred_output_list) == 1  # batch size = 1
@@ -134,15 +147,15 @@ def main():
     # Set Mocap regressor
     hand_mocap = HandMocap(args.checkpoint_hand, args.smpl_dir, device = device)
 
-    # # Set Visualizer
-    # if args.renderer_type in ['pytorch3d', 'opendr']:
-    #     from renderer.screen_free_visualizer import Visualizer
-    # else:
-    #     from renderer.visualizer import Visualizer
-    # visualizer = Visualizer(args.renderer_type)
+    # Set Visualizer
+    if args.renderer_type in ['pytorch3d', 'opendr']:
+        from renderer.screen_free_visualizer import Visualizer
+    else:
+        from renderer.visualizer import Visualizer
+    visualizer = Visualizer(args.renderer_type)
 
     # run
-    run_hand_mocap(args, bbox_detector, hand_mocap, None)
+    run_hand_mocap(args, bbox_detector, hand_mocap, visualizer)
    
 
 if __name__ == '__main__':
